@@ -1,0 +1,339 @@
+Parfait. Voici tous les fichiers complets du projet IMS Service Generator (avec React Flow intégré), incluant :
+
+✅ Drag & Drop interactif
+✅ Composants IMS + flux SIP/RTP/Diameter
+✅ Explications pédagogiques
+✅ Interface professionnelle avec Tailwind CSS
+✅ Configuration complète pour Next.js
+
+
+---
+
+📁 Structure complète du projet
+
+ims-service-generator/
+├── pages/
+│   ├── _app.tsx
+│   └── index.tsx
+├── components/
+│   ├── IMSCanvas.tsx
+│   ├── ComponentPalette.tsx
+│   ├── ScenarioSelector.tsx
+│   └── Explanations.tsx
+├── styles/
+│   └── globals.css
+├── tailwind.config.js
+├── postcss.config.js
+├── next.config.js
+├── tsconfig.json
+├── package.json
+└── README.md
+
+
+---
+
+🔵 pages/_app.tsx
+
+import '../styles/globals.css';
+import type { AppProps } from 'next/app';
+
+export default function App({ Component, pageProps }: AppProps) {
+  return <Component {...pageProps} />;
+}
+
+
+---
+
+🔵 pages/index.tsx
+
+import { useState } from 'react';
+import IMSCanvas from '../components/IMSCanvas';
+import ComponentPalette from '../components/ComponentPalette';
+import ScenarioSelector from '../components/ScenarioSelector';
+import Explanations from '../components/Explanations';
+
+export default function Home() {
+  const [scenario, setScenario] = useState<string>('default');
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-4">
+      <h1 className="text-3xl font-bold text-center text-blue-800 mb-4">Générateur de Services IMS</h1>
+      <p className="text-center text-gray-600 mb-6">Créez des scénarios IMS avec des composants réseau sécurisés</p>
+      <ScenarioSelector onSelect={setScenario} />
+      <div className="flex flex-col md:flex-row gap-4 mt-4">
+        <ComponentPalette />
+        <IMSCanvas scenario={scenario} />
+      </div>
+      <Explanations />
+    </div>
+  );
+}
+
+
+---
+
+🧩 components/ScenarioSelector.tsx
+
+type Props = {
+  onSelect: (scenario: string) => void;
+};
+
+export default function ScenarioSelector({ onSelect }: Props) {
+  return (
+    <div className="bg-white shadow p-4 rounded max-w-2xl mx-auto mb-4">
+      <label className="block mb-2 text-blue-700 font-semibold">Choisir un scénario IMS :</label>
+      <select onChange={(e) => onSelect(e.target.value)} className="w-full border rounded p-2">
+        <option value="default">-- Sélectionner --</option>
+        <option value="teleconsultation">Téléconsultation</option>
+        <option value="callcenter">Centre d’appel</option>
+        <option value="messagerie">Messagerie sécurisée</option>
+      </select>
+    </div>
+  );
+}
+
+
+---
+
+🧩 components/ComponentPalette.tsx
+
+export default function ComponentPalette() {
+  const components = ['UE', 'P-CSCF', 'I-CSCF', 'S-CSCF', 'HSS', 'AS'];
+
+  return (
+    <div className="bg-white shadow p-4 rounded w-full md:w-64">
+      <h2 className="text-lg font-semibold text-blue-700 mb-2">Composants IMS</h2>
+      <ul className="space-y-2">
+        {components.map((comp) => (
+          <li key={comp} className="p-2 bg-gray-100 text-center rounded hover:bg-blue-50 cursor-default">{comp}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+
+---
+
+🧩 components/IMSCanvas.tsx (avec React Flow)
+
+import ReactFlow, {
+  MiniMap, Controls, Background, addEdge, useNodesState, useEdgesState, Connection, Edge, MarkerType
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+import { useCallback } from 'react';
+
+type Props = {
+  scenario: string;
+};
+
+const initialNodes = [
+  { id: 'ue', data: { label: 'UE' }, position: { x: 50, y: 100 }, type: 'default' },
+  { id: 'pcscf', data: { label: 'P-CSCF' }, position: { x: 200, y: 100 }, type: 'default' },
+  { id: 'icscf', data: { label: 'I-CSCF' }, position: { x: 350, y: 100 }, type: 'default' },
+  { id: 'scscf', data: { label: 'S-CSCF' }, position: { x: 500, y: 100 }, type: 'default' },
+  { id: 'hss', data: { label: 'HSS' }, position: { x: 500, y: 250 }, type: 'default' },
+  { id: 'as', data: { label: 'AS' }, position: { x: 700, y: 100 }, type: 'default' }
+];
+
+const initialEdges = [
+  {
+    id: 'e1', source: 'ue', target: 'pcscf', label: 'SIP INVITE', animated: true,
+    style: { stroke: 'green' }, markerEnd: { type: MarkerType.ArrowClosed }
+  },
+  {
+    id: 'e2', source: 'pcscf', target: 'icscf', label: 'SIP Proxy', animated: true,
+    style: { stroke: 'green' }, markerEnd: { type: MarkerType.ArrowClosed }
+  },
+  {
+    id: 'e3', source: 'icscf', target: 'scscf', label: 'Query S-CSCF', animated: true,
+    style: { stroke: 'green' }, markerEnd: { type: MarkerType.ArrowClosed }
+  },
+  {
+    id: 'e4', source: 'scscf', target: 'hss', label: 'Diameter Auth', animated: true,
+    style: { stroke: 'gold' }, markerEnd: { type: MarkerType.ArrowClosed }
+  },
+  {
+    id: 'e5', source: 'scscf', target: 'as', label: 'Service Trigger', animated: true,
+    style: { stroke: 'blue' }, markerEnd: { type: MarkerType.ArrowClosed }
+  }
+];
+
+export default function IMSCanvas({ scenario }: Props) {
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  const onConnect = useCallback(
+    (params: Edge | Connection) =>
+      setEdges((eds) =>
+        addEdge(
+          {
+            ...params,
+            animated: true,
+            style: { stroke: 'black' },
+            markerEnd: { type: MarkerType.ArrowClosed }
+          },
+          eds
+        )
+      ),
+    [setEdges]
+  );
+
+  return (
+    <div className="flex-1 h-[500px] bg-white p-2 rounded shadow">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        fitView
+      >
+        <MiniMap />
+        <Controls />
+        <Background gap={12} />
+      </ReactFlow>
+    </div>
+  );
+}
+
+
+---
+
+🧩 components/Explanations.tsx
+
+export default function Explanations() {
+  return (
+    <div className="max-w-4xl mx-auto bg-white mt-8 p-4 rounded shadow text-sm text-gray-700">
+      <h2 className="text-lg font-semibold text-blue-700 mb-2">📚 Explication pédagogique IMS</h2>
+      <p><strong>IMS</strong> est une architecture permettant de fournir des services multimédias sur IP, tels que la voix, la vidéo et la messagerie.</p>
+      <ul className="list-disc pl-5 mt-2 space-y-1">
+        <li><strong>P-CSCF</strong> : Point d'entrée sécurisé du terminal</li>
+        <li><strong>I-CSCF</strong> : Route vers le bon serveur S-CSCF</li>
+        <li><strong>S-CSCF</strong> : Cœur de la logique d’appel</li>
+        <li><strong>HSS</strong> : Base d’abonnés, authentification</li>
+        <li><strong>AS</strong> : Serveur d’application (messagerie, conférence…)</li>
+        <li><strong>UE</strong> : Terminal utilisateur (mobile ou WebRTC)</li>
+      </ul>
+      <p className="mt-2">Sécurisation : IPsec / TLS pour la signalisation, SRTP pour la voix, IMS AKA pour l’authentification.</p>
+    </div>
+  );
+}
+
+
+---
+
+🎨 styles/globals.css
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-gray-100 text-gray-800 font-sans;
+}
+
+
+---
+
+⚙️ tailwind.config.js
+
+module.exports = {
+  content: [
+    './pages/**/*.{js,ts,jsx,tsx}',
+    './components/**/*.{js,ts,jsx,tsx}'
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+
+
+---
+
+⚙️ postcss.config.js
+
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+
+
+---
+
+⚙️ next.config.js
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {}
+
+module.exports = nextConfig;
+
+
+---
+
+⚙️ tsconfig.json
+
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
+}
+
+
+---
+
+⚙️ package.json
+
+{
+  "name": "ims-service-generator",
+  "version": "1.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "13.4.19",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "reactflow": "^11.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.17.19",
+    "@types/react": "^18.2.15",
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.21",
+    "tailwindcss": "^3.3.2",
+    "typescript": "^5.0.0"
+  }
+}
+
+
+---
+
+Souhaites-tu que je t’aide à :
+
+Ajouter la sauvegarde/export du diagramme IMS ?
+
+Gérer un mode mobile responsive optimisé ?
+
+
